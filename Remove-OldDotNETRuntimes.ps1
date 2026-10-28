@@ -3,7 +3,21 @@
     Removes outdated Microsoft Windows Desktop Runtime versions, keeping the latest per major version and architecture.
  
     .DESCRIPTION
-    Reads the installed programs from the registry Uninstall keys and finds all
+    By default, .NET removes previous versions when a newer one is installed. This behavior can be
+    controlled through the RemovePreviousVersion registry value (REG_SZ), set either for all .NET
+    versions under HKLM\SOFTWARE\Microsoft\.NET or for a specific version under
+    HKLM\SOFTWARE\Microsoft\.NET\<major>.0 (e.g. 8.0, 9.0, 10.0). Accepted values:
+      - always:      removes previous installations after the new version is installed (default).
+      - never:       keeps previous installations; they must be removed manually.
+      - nextSession: defers removal until the next logon session of a member of the Administrators group.
+    Values are case-insensitive and invalid values default to always.
+    https://learn.microsoft.com/en-us/dotnet/core/install/windows#choose-when-previous-versions-are-removed
+
+    When RemovePreviousVersion is set to never (or nextSession), older runtimes remain on the
+    machine. This script performs that cleanup in a controlled way, independent of the .NET installer,
+    and with no need for an Administrator to log on (unlike nextSession).
+
+    It reads the installed programs from the registry Uninstall keys and finds all
     "Microsoft Windows Desktop Runtime" entries. For each major version (e.g. 6, 7, 8)
     and each architecture (x86 and x64, determined from the DisplayName because the
     registry reports all .NET entries as 32-bit), the newest build is kept and all
@@ -15,6 +29,9 @@
     .NOTES
     Author:   Matthijs Koers
     Requires: Administrative privileges
+    Intended deployment: Computer Configuration > Policies > Windows Settings > Scripts > Startup (GPO),
+    where the script runs as SYSTEM and therefore has the required privileges. No Administrator
+    logon is needed for the cleanup to take place.
  
     .EXAMPLE
     .\Remove-OldDotNETRuntimes.ps1
